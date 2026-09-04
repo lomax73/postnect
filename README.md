@@ -54,6 +54,7 @@ tutti verdi (`venv/bin/python manage.py test`).
 ## Deploy
 
 **In produzione (ip-provisional)**: `https://94.177.161.127:8454/`,
-deployato e verificato end-to-end il 2026-09-04. Vedi `deploy/README.md`
-per stato dettagliato e cosa manca ancora (in particolare `PORTAL_API_TOKEN`
-da completare a mano).
+deployato, verificato end-to-end e integrato col Portale FBO (anagrafica
+clienti + gestione utenti) il 2026-09-04. Registrato nel Portale come
+`AppLink` (slug `postnect`). Vedi `deploy/README.md` per lo stato
+dettagliato.

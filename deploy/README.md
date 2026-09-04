@@ -14,17 +14,22 @@ esecuzione come unit systemd separata.
 `postnect-worker.service` attivi, flusso end-to-end testato via API
 (`POST /genera` → Celery → Playwright → immagine servita da `/media/`).
 
-Cosa manca ancora prima che l'app sia davvero operativa (non bloccante per
-il deploy in sé, ma necessario per l'integrazione col Portale):
-- **`PORTAL_API_TOKEN`** in `/opt/postnect/app/.env` è un placeholder
-  (`DA_COMPLETARE_...`) — va sostituito con lo stesso valore di
-  `INTERNAL_API_TOKEN` nel `.env` del Portale (`/opt/portal/app/.env` sul
-  VPS), poi `systemctl restart postnect-web postnect-worker`. Non l'ho letto
-  io per non maneggiare un segreto di un'altra app — copialo tu.
+**Integrazione col Portale completata il 2026-09-04**:
+- `PORTAL_API_TOKEN` in `/opt/postnect/app/.env` valorizzato (copiato
+  server-side da `INTERNAL_API_TOKEN` del Portale, senza farlo transitare in
+  chat), servizi riavviati. Verificato: `jobs.portal_client.list_clienti()`
+  risponde con l'anagrafica reale (23 clienti).
+- App registrata nel Portale come `AppLink` (slug `postnect`, categoria
+  interna, stato "In sviluppo", icona `postnect.svg` caricata in
+  `static/img/`, `internal_base_url`/`internal_ca_cert` configurati).
+  `api_token` sull'`AppLink` impostato con l'`INTERNAL_API_TOKEN` di
+  Postnect: verificato che il Portale riesca a leggere gli utenti di
+  Postnect via `useradmin.services.list_users()`.
+
+Cosa manca ancora (non bloccante):
 - Nessun cliente/template/destinazione reale creato ancora: solo dati di
   test (creati e poi rimossi) durante la verifica.
 - Dominio vero non ancora richiesto (resta sull'IP nudo, porta 8454).
-- App non ancora registrata nel Portale (`AppLink`).
 
 Note di configurazione verificate sul VPS il 2026-09-04 (per riferimento,
 vedi anche `struttura_app_fbo.md`):
