@@ -53,6 +53,5 @@ tutti verdi (`venv/bin/python manage.py test`).
 
 ## Deploy
 
-Vedi `deploy/README.md`. **Non ancora verificato su un VPS reale** — prima
-del primo deploy vanno confermate la porta Nginx e il db Redis (vedi le
-note in cima a `deploy/README.md`).
+Vedi `deploy/README.md`. Porta Nginx (`8454`) e db Redis (`3`) verificati
+liberi sul VPS il 2026-09-04. Provisioning iniziale non ancora eseguito.

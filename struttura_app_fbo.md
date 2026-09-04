@@ -18,15 +18,21 @@ stack o le convenzioni ogni volta.
   `DB_ENGINE=postgresql`, ma di default resta comunque su sqlite).
 - **Coda asincrona**: Celery + Redis, solo se il progetto ha lavoro di
   background reale (invio email, generazione documenti, rendering). Redis è
-  **condiviso** su un'unica istanza del VPS: ogni app usa un **numero di
-  database Redis diverso** per non collidere in coda né nei channel layer.
-  Allocazione nota finora:
+  **condiviso** su un'unica istanza del VPS (`databases 16` in
+  `/etc/redis/redis.conf`, richiede password — vedi `redis://:<password>@...`
+  negli `.env` esistenti): ogni app usa un **numero di database Redis
+  diverso** per non collidere in coda né nei channel layer. Allocazione
+  **verificata sul VPS il 2026-09-04** (`redis-cli info keyspace` +
+  `.env` delle app deployate):
   - `0` — MKRemote (Celery)
   - `1` — MKRemote (Channels/WebSocket)
   - `2` — FBOMailer (Celery)
-  - successivo libero noto: **`3`** — verificare comunque sul VPS prima di
-    assegnarlo a una nuova app (`redis-cli -n N ping` / controllare gli
-    `.env` di tutte le app deployate), la lista qui può non essere aggiornata.
+  - `3` — **Postnect** (Celery, assegnato in questa sessione)
+  - le altre app (FBOPortal, FBOPreventivi, FBOLeads, FBONetVault,
+    FBORackReport, FBOFiberReport, Squadfy, FBOFlag, Sicufy) non usano
+    Celery/Redis al momento di questa verifica
+  - Ri-verificare comunque con `redis-cli -a <password> info keyspace` prima
+    di assegnare un nuovo numero: questa lista può disallinearsi nel tempo.
 - **Server applicativo**: `gunicorn` (WSGI) dietro Nginx, oppure `daphne` se
   serve ASGI/WebSocket (channels, come FBOAIGate/MKRemote).
 - **Niente Docker**: tutte le app girano da venv nativo + systemd + Nginx
@@ -209,13 +215,19 @@ Se c'è Celery, aggiungere una seconda unit `<nomeapp>-worker.service` con
 1. **`nginx-<nomeapp>-ip-provisional.conf`**: finché non c'è un dominio DNS
    vero, l'app viene servita sull'IP nudo del VPS (`94.177.161.127`) su una
    **porta dedicata**, certificato self-signed proprio in
-   `/etc/ssl/<nomeapp>/`. **Ogni app deve avere una porta propria**, mai
-   condividerla con altre — porte già occupate per il blocco `/api/internal/`
-   (loopback-only): `8443` Portal, `8444` FiberReport, `8445` Preventivi,
-   `8446` RackReport, `8447` NetVault, `8449` MKRemote, `8451` FBOLeads,
-   `8452` FBOAIGate → prossima libera nota **`8453`**, verificare comunque
-   sul VPS prima di usarla. Motivo: sulla porta condivisa 443 il routing
-   nginx si basa su `server_name`/header `Host`, e una chiamata interna verso
+   `/etc/ssl/<nomeapp>/`, e la porta va aperta anche su UFW (`ufw allow
+   <porta>/tcp`, con un commento — vedi le regole esistenti con `ufw status
+   numbered`). **Ogni app deve avere una porta propria**, mai condividerla
+   con altre. Porte occupate, **verificate sul VPS il 2026-09-04**
+   (`ss -tlnp` + `grep listen /etc/nginx/sites-available/*`): `8443` Portal,
+   `8444` FiberReport, `8445` Preventivi, `8446` RackReport, `8447`
+   NetVault, `8448` Squadfy, `8449` MKRemote, `8450` FBOMailer, `8451`
+   FBOLeads, `8452` FBOAIGate, `8453` Sicufy → prossima libera **`8454`**
+   (assegnata a Postnect in questa sessione). Ri-verificare comunque con
+   `ss -tlnp` + i conf in `/etc/nginx/sites-available/` prima di assegnarne
+   una nuova: questa lista può disallinearsi nel tempo. Motivo per cui la
+   porta dev'essere dedicata (non condivisa su 443): il routing nginx si
+   basa su `server_name`/header `Host`, e una chiamata interna verso
    `127.0.0.1` senza SNI/Host corretto finisce sul vhost sbagliato (vedi
    `FBOPortal/REDFLAG_REPORT.md`, sessione 2026-08-08, causa di un bug reale
    già capitato).
@@ -280,6 +292,24 @@ replicare per una nuova app quando il deploy manuale è rodato.
 - **`.gitignore`**: sempre escludere `venv/`, `db.sqlite3` (a volte
   versionato in dev, mai in prod), `.env`, `staticfiles/`, `media/` (salvo
   eccezioni).
+
+## Risorse del VPS (verificato 2026-09-04)
+
+- **RAM**: 3.8 GiB totali, ~2.2 GiB già in uso dalle app esistenti, ~1.7 GiB
+  "available" (buff/cache riclamabile). **Attenzione con Chromium/Playwright**
+  (Postnect) o altri processi pesanti: un worker Celery che tiene Chromium
+  aperto a lungo, o più rendering concorrenti, possono avvicinare il limite.
+  Se in futuro si notano OOM/kill del worker, valutare `--concurrency=1` su
+  Celery o uno swap più ampio (attualmente 511 MiB) prima di aumentare la RAM
+  del VPS.
+- **Disco**: 39 GB totali, 30 GB liberi — non un vincolo stringente oggi.
+- **Postgres**: presente e in ascolto su `127.0.0.1:5432` (usato da almeno
+  un'app, verificare quale prima di assumere che sia libero/riusabile).
+- App effettivamente deployate ad oggi (`/opt/*`): fboaigate, fboflag,
+  fboleads, fbomailer, fiberreport, mkremote, netvault, portal, preventivi,
+  rackreport, sicufy, squadfy. **Sicufy** non era ancora stata censita in
+  questo documento prima del deploy di Postnect — se aggiungi altre app,
+  ricontrolla sempre `/opt/` sul VPS, non solo i repository locali.
 
 ## Checklist rapida per una nuova app FBO
 

@@ -9,16 +9,23 @@ esecuzione come unit systemd separata.
 
 ## Stato attuale
 
-**Nessuna verifica ancora fatta sul VPS reale.** Prima del primo deploy,
-controllare:
-- che la **porta 8453** (usata in `nginx-postnect-ip-provisional.conf`) sia
-  davvero libera — vedi l'elenco in `struttura_app_fbo.md`, che può essere
-  disallineato rispetto a quanto effettivamente configurato oggi;
-- che il **db Redis 3** (usato di default per `CELERY_BROKER_URL`/
-  `CELERY_RESULT_BACKEND`) non sia già in uso da un'altra app.
+Verificato via SSH su `mkremote-vps` il 2026-09-04:
+- **Porta 8454** (usata in `nginx-postnect-ip-provisional.conf`) confermata
+  libera — occupate: 8443-8453 (Portale, FiberReport, Preventivi,
+  RackReport, NetVault, Squadfy, MKRemote, FBOMailer, FBOLeads, FBOAIGate,
+  Sicufy).
+- **Db Redis 3** (usato di default per `CELERY_BROKER_URL`/
+  `CELERY_RESULT_BACKEND`) confermato libero — occupati: 0/1 (MKRemote),
+  2 (FBOMailer). Redis richiede autenticazione (`redis://:<password>@...`,
+  la password è quella già nell'`.env` di MKRemote/FBOMailer sul VPS).
+- **RAM del VPS limitata** (3.8 GiB totali, ~1.7 GiB liberi): Chromium
+  headless (Playwright) è il processo più pesante di questa app — se il
+  worker va in OOM, valutare `celery -A postnect worker --concurrency=1`
+  invece del default. Vedi `struttura_app_fbo.md` per i dettagli.
 
-Se una delle due risorse è occupata, sceglierne una libera e aggiornare di
-conseguenza `nginx-postnect-ip-provisional.conf` e/o `.env`.
+Se in futuro queste risorse risultassero rioccupate da un'altra app nel
+frattempo, aggiornare di conseguenza `nginx-postnect-ip-provisional.conf`
+e/o `.env` prima di procedere.
 
 ## Provisioning iniziale (una tantum)
 
