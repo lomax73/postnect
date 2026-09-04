@@ -162,6 +162,14 @@ separato. Provisioning iniziale tipo:
 
 ```bash
 adduser --system --group --home /opt/<nomeapp> <nomeapp>
+# adduser crea la home con permessi 750 (drwxr-x---): nginx (utente
+# www-data, non nel gruppo <nomeapp>) non riuscirebbe nemmeno ad
+# attraversarla per servire /static/ o /media/ via alias -> 403. Aggiungere
+# la sola x per "altri" (attraversabile, non elencabile), come già fatto
+# per le altre app (es. /opt/preventivi è drwxr-x--x). Verificato di
+# persona sul deploy di Postnect (2026-09-04): senza questo passo
+# /media/... risponde 403 anche con Nginx configurato correttamente.
+chmod o+x /opt/<nomeapp>
 mkdir -p /opt/<nomeapp>/app
 chown <nomeapp>:<nomeapp> /opt/<nomeapp>/app
 

@@ -9,29 +9,42 @@ esecuzione come unit systemd separata.
 
 ## Stato attuale
 
-Verificato via SSH su `mkremote-vps` il 2026-09-04:
-- **Porta 8454** (usata in `nginx-postnect-ip-provisional.conf`) confermata
-  libera — occupate: 8443-8453 (Portale, FiberReport, Preventivi,
-  RackReport, NetVault, Squadfy, MKRemote, FBOMailer, FBOLeads, FBOAIGate,
-  Sicufy).
-- **Db Redis 3** (usato di default per `CELERY_BROKER_URL`/
-  `CELERY_RESULT_BACKEND`) confermato libero — occupati: 0/1 (MKRemote),
-  2 (FBOMailer). Redis richiede autenticazione (`redis://:<password>@...`,
-  la password è quella già nell'`.env` di MKRemote/FBOMailer sul VPS).
-- **RAM del VPS limitata** (3.8 GiB totali, ~1.7 GiB liberi): Chromium
-  headless (Playwright) è il processo più pesante di questa app — se il
-  worker va in OOM, valutare `celery -A postnect worker --concurrency=1`
-  invece del default. Vedi `struttura_app_fbo.md` per i dettagli.
+**Deployato e verificato in produzione (ip-provisional) il 2026-09-04**:
+`https://94.177.161.127:8454/` — `postnect-web.service` e
+`postnect-worker.service` attivi, flusso end-to-end testato via API
+(`POST /genera` → Celery → Playwright → immagine servita da `/media/`).
 
-Se in futuro queste risorse risultassero rioccupate da un'altra app nel
-frattempo, aggiornare di conseguenza `nginx-postnect-ip-provisional.conf`
-e/o `.env` prima di procedere.
+Cosa manca ancora prima che l'app sia davvero operativa (non bloccante per
+il deploy in sé, ma necessario per l'integrazione col Portale):
+- **`PORTAL_API_TOKEN`** in `/opt/postnect/app/.env` è un placeholder
+  (`DA_COMPLETARE_...`) — va sostituito con lo stesso valore di
+  `INTERNAL_API_TOKEN` nel `.env` del Portale (`/opt/portal/app/.env` sul
+  VPS), poi `systemctl restart postnect-web postnect-worker`. Non l'ho letto
+  io per non maneggiare un segreto di un'altra app — copialo tu.
+- Nessun cliente/template/destinazione reale creato ancora: solo dati di
+  test (creati e poi rimossi) durante la verifica.
+- Dominio vero non ancora richiesto (resta sull'IP nudo, porta 8454).
+- App non ancora registrata nel Portale (`AppLink`).
+
+Note di configurazione verificate sul VPS il 2026-09-04 (per riferimento,
+vedi anche `struttura_app_fbo.md`):
+- Porta **8454** libera (8443-8453 già occupate da altre 11 app).
+- Db Redis **3** libero (0/1 MKRemote, 2 FBOMailer). Redis richiede
+  autenticazione (`redis://:<password>@...`, stessa password di
+  MKRemote/FBOMailer).
+- RAM del VPS limitata (3.8 GiB totali, ~1.7 GiB liberi): Chromium headless
+  è il processo più pesante di questa app — se il worker va in OOM,
+  valutare `celery -A postnect worker --concurrency=1`.
+- **`chmod o+x /opt/postnect` necessario** (già applicato): senza, Nginx
+  (`www-data`) non può attraversare la home per servire `/static/`/`/media/`
+  → 403 anche con config Nginx corretta. Vedi il passo dedicato sotto.
 
 ## Provisioning iniziale (una tantum)
 
 ```bash
 # da root sul VPS
 adduser --system --group --home /opt/postnect postnect
+chmod o+x /opt/postnect   # altrimenti nginx (www-data) non attraversa la home per /static//media/ -> 403
 mkdir -p /opt/postnect/app
 chown postnect:postnect /opt/postnect/app
 
