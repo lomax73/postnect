@@ -41,11 +41,18 @@ venv/bin/celery -A postnect worker -l info
   se il Job ha una Destinazione), API REST autenticata via header
   `X-API-Key` (`POST /genera`, `POST /pubblica`, `GET /job/{id}`), isolamento
   tra clienti verificato su ogni endpoint. Test in `jobs/tests.py`.
+- **Prompt 4** (dashboard admin): completato. Gestione di `ApiClient`
+  (azione "rigenera API key"), `Template` (azione "genera anteprima" con
+  dati di esempio), `Destinazione` (token mascherato, non richiesto in
+  modifica), `Job` (sola lettura, stato colorato, filtri) tramite Django
+  admin — vedi `jobs/admin.py`. `deploy/` creato seguendo il pattern in
+  `struttura_app_fbo.md`.
 
-Dashboard admin (Prompt 4, incluso `deploy/`) segue — vedi
-`prompt-claude-code-postnect.md`.
+Tutti i prompt di `prompt-claude-code-postnect.md` sono completati. 24 test,
+tutti verdi (`venv/bin/python manage.py test`).
 
 ## Deploy
 
-Vedi `deploy/README.md` (da creare al Prompt 4, seguendo il pattern in
-`struttura_app_fbo.md`).
+Vedi `deploy/README.md`. **Non ancora verificato su un VPS reale** — prima
+del primo deploy vanno confermate la porta Nginx e il db Redis (vedi le
+note in cima a `deploy/README.md`).

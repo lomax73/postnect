@@ -1,0 +1,14 @@
+[Unit]
+Description=Postnect - Celery worker (rendering Playwright + pubblicazione social)
+After=network.target redis.service
+
+[Service]
+Type=simple
+User=postnect
+Group=postnect
+WorkingDirectory=/opt/postnect/app
+ExecStart=/opt/postnect/app/venv/bin/celery -A postnect worker -l info
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

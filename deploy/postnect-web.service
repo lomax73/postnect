@@ -1,0 +1,17 @@
+[Unit]
+Description=Postnect - Gunicorn
+After=network.target
+
+[Service]
+Type=simple
+User=postnect
+Group=postnect
+WorkingDirectory=/opt/postnect/app
+ExecStart=/opt/postnect/app/venv/bin/gunicorn postnect.wsgi:application \
+    --bind unix:/run/postnect/gunicorn.sock \
+    --workers 2
+RuntimeDirectory=postnect
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -249,3 +249,46 @@ class FlussoCompletoGeneraPubblicaTests(ApiTestBase):
         job.refresh_from_db()
         self.assertEqual(stato_finale, 'generato')
         self.assertIsNone(job.post_id_risultante)
+
+
+class AdminTests(ApiTestBase):
+    def _login_admin(self):
+        from django.contrib.auth.models import User
+        User.objects.create_superuser('admin', 'admin@example.com', 'password123')
+        self.client.login(username='admin', password='password123')
+
+    def test_rigenera_api_key_action(self):
+        self._login_admin()
+        vecchia_key = self.api_client_a.api_key
+        self.client.post('/admin/jobs/apiclient/', data={
+            'action': 'rigenera_api_key', '_selected_action': [self.api_client_a.pk],
+        })
+        self.api_client_a.refresh_from_db()
+        self.assertNotEqual(self.api_client_a.api_key, vecchia_key)
+
+    def test_genera_anteprima_action(self):
+        self._login_admin()
+        self.client.post('/admin/jobs/template/', data={
+            'action': 'genera_anteprima', '_selected_action': [self.template_a.pk],
+        })
+        job = Job.objects.filter(template=self.template_a).latest('created_at')
+        self.assertEqual(job.stato, 'generato')
+        self.assertTrue(job.immagine_path)
+
+    def test_destinazione_form_richiede_token_alla_creazione(self):
+        from jobs.admin import DestinazioneForm
+        form = DestinazioneForm(data={
+            'client_id': self.CLIENT_A, 'piattaforma': 'facebook',
+            'page_id': '999', 'nome_descrittivo': 'Nuova pagina', 'access_token': '',
+        })
+        self.assertFalse(form.is_valid())
+
+    def test_destinazione_form_non_richiede_token_in_modifica(self):
+        from jobs.admin import DestinazioneForm
+        form = DestinazioneForm(data={
+            'client_id': self.CLIENT_A, 'piattaforma': 'facebook',
+            'page_id': self.destinazione_a.page_id, 'nome_descrittivo': 'Rinominata', 'access_token': '',
+        }, instance=self.destinazione_a)
+        self.assertTrue(form.is_valid())
+        destinazione = form.save()
+        self.assertEqual(destinazione.access_token, 'token-segreto')
