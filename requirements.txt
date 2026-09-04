@@ -5,3 +5,4 @@ requests
 cryptography
 celery
 redis
+playwright

@@ -12,6 +12,7 @@ condivise con le altre app collegate a FBOPortal.
 ```
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt
+venv/bin/playwright install chromium   # scarica il browser headless usato dal motore di rendering
 cp .env.example .env
 venv/bin/python manage.py migrate
 venv/bin/python manage.py createsuperuser
@@ -27,11 +28,17 @@ venv/bin/celery -A postnect worker -l info
 
 ## Stato
 
-Scaffolding e modelli (Prompt 1) completati: `jobs/` (Template, Destinazione,
-Job, ApiClient — nessun modello Cliente locale, si risolve `client_id` dal
-Portale via `jobs/portal_client.py`), `accounts/` (API interna gestione
-utenti per il Portale). Rendering, pubblicazione, API REST e dashboard admin
-seguono nei prompt successivi — vedi `prompt-claude-code-postnect.md`.
+- **Prompt 1** (scaffolding e modelli): completato. `jobs/` (Template,
+  Destinazione, Job, ApiClient — nessun modello Cliente locale, si risolve
+  `client_id` dal Portale via `jobs/portal_client.py`), `accounts/` (API
+  interna gestione utenti per il Portale).
+- **Prompt 2** (motore di rendering): completato. `jobs/rendering.py`
+  (sostituzione placeholder + validazione campi_richiesti + screenshot
+  Playwright), `jobs/tasks.py` (task Celery `render_job`), immagini salvate
+  in `media/renders/`. Test in `jobs/tests.py`.
+
+Pubblicazione, API REST e dashboard admin seguono nei prompt successivi —
+vedi `prompt-claude-code-postnect.md`.
 
 ## Deploy
 
