@@ -34,11 +34,16 @@ venv/bin/celery -A postnect worker -l info
   interna gestione utenti per il Portale).
 - **Prompt 2** (motore di rendering): completato. `jobs/rendering.py`
   (sostituzione placeholder + validazione campi_richiesti + screenshot
-  Playwright), `jobs/tasks.py` (task Celery `render_job`), immagini salvate
-  in `media/renders/`. Test in `jobs/tests.py`.
+  Playwright), immagini salvate in `media/renders/`.
+- **Prompt 3** (pubblicazione e API REST): completato. `jobs/publishing.py`
+  (`SocialPublisher` astratto, `FacebookPublisher` via Graph API),
+  `jobs/tasks.py` (task Celery unico `process_job`: rendering + pubblicazione
+  se il Job ha una Destinazione), API REST autenticata via header
+  `X-API-Key` (`POST /genera`, `POST /pubblica`, `GET /job/{id}`), isolamento
+  tra clienti verificato su ogni endpoint. Test in `jobs/tests.py`.
 
-Pubblicazione, API REST e dashboard admin seguono nei prompt successivi —
-vedi `prompt-claude-code-postnect.md`.
+Dashboard admin (Prompt 4, incluso `deploy/`) segue — vedi
+`prompt-claude-code-postnect.md`.
 
 ## Deploy
 

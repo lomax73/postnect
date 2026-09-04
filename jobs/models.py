@@ -96,6 +96,10 @@ class Job(models.Model):
         Destinazione, on_delete=models.PROTECT, related_name='job_set', blank=True, null=True,
         help_text='Nullo se il job è solo generazione, senza pubblicazione.',
     )
+    caption = models.TextField(
+        blank=True, null=True,
+        help_text='Didascalia da usare in pubblicazione (POST /pubblica). Non usata se destinazione è nullo.',
+    )
     post_id_risultante = models.CharField(max_length=255, blank=True, null=True)
     errore_messaggio = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

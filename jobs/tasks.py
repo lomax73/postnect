@@ -1,14 +1,22 @@
 from celery import shared_task
 
-from . import rendering
+from . import publishing, rendering
 from .models import Job
 
 
 @shared_task
-def render_job(job_id):
-    """Task Celery: esegue il rendering di un Job (screenshot Playwright).
+def process_job(job_id):
+    """Task Celery unico per entrambi i flussi API: rendering, e se il Job
+    ha una Destinazione (POST /pubblica) anche la pubblicazione a seguire.
     Va sempre accodato con .delay()/.apply_async(), mai chiamato in
     request-response diretto."""
-    job = Job.objects.select_related('template').get(pk=job_id)
+    job = Job.objects.select_related('template', 'destinazione').get(pk=job_id)
+
     rendering.esegui_rendering(job)
+    job.refresh_from_db()
+
+    if job.stato == 'generato' and job.destinazione_id:
+        publishing.esegui_pubblicazione(job)
+        job.refresh_from_db()
+
     return job.stato
