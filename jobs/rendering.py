@@ -93,3 +93,18 @@ def esegui_rendering(job):
     job.immagine_path = relative_path
     job.stato = 'generato'
     job.save(update_fields=['immagine_path', 'stato', 'updated_at'])
+
+
+def genera_job_anteprima(template):
+    """Crea un Job con dati di esempio (uno per campo richiesto) e lo
+    renderizza subito, in modo sincrono — usata dall'azione "Genera
+    anteprima" (Django admin e dashboard): un'anteprima interna non ha
+    senso farla passare dalla coda Celery. Ritorna il Job risultante
+    (stato 'generato' o 'errore', mai 'in_coda')."""
+    from .models import Job  # import locale: evita un ciclo models -> rendering -> models
+
+    dati_esempio = {campo: f'esempio {campo}' for campo in template.campi_richiesti}
+    job = Job.objects.create(client_id=template.client_id, template=template, dati=dati_esempio)
+    esegui_rendering(job)
+    job.refresh_from_db()
+    return job

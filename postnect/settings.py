@@ -83,12 +83,17 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'jobs.context_processors.portal_public_url',
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = 'postnect.wsgi.application'
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'job-list'
+LOGOUT_REDIRECT_URL = 'login'
 
 
 # Database — SQLite: coerente col resto della famiglia FBO, volumi previsti

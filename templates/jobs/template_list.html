@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Template — Postnect{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+    <h1>Template</h1>
+    <a class="btn" href="{% url 'template-create' %}">+ Nuovo template</a>
+</div>
+
+{% if templates %}
+<table>
+    <thead>
+        <tr><th>Nome</th><th>Cliente</th><th>Campi richiesti</th><th>Attivo</th><th></th></tr>
+    </thead>
+    <tbody>
+        {% for template in templates %}
+        <tr>
+            <td>{{ template.nome }}</td>
+            <td class="mono">{{ template.client_id }}</td>
+            <td>{{ template.campi_richiesti|join:", " }}</td>
+            <td>{% if template.attivo %}Sì{% else %}No{% endif %}</td>
+            <td style="white-space:nowrap;">
+                <a href="{% url 'template-update' template.pk %}">Modifica</a>
+                <form action="{% url 'template-anteprima' template.pk %}" method="post" style="display:inline; margin-left:0.75rem;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary btn-small">Genera anteprima</button>
+                </form>
+                <a href="{% url 'template-delete' template.pk %}" style="color:#ef4444; margin-left:0.75rem;">Elimina</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Nessun template ancora. <a href="{% url 'template-create' %}">Creane uno</a>.</p>
+{% endif %}
+{% endblock %}

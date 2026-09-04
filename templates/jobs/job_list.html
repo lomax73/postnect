@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Job — Postnect{% endblock %}
+
+{% block content %}
+<h1>Job recenti</h1>
+
+<div class="card" style="padding:0.75rem 1.25rem; margin-bottom:1rem;">
+    <a href="{% url 'job-list' %}" class="{% if not stato_filtro %}mono{% endif %}" style="margin-right:1rem; {% if not stato_filtro %}font-weight:700; color:var(--navy);{% endif %}">Tutti</a>
+    {% for valore, etichetta in stati %}
+    <a href="?stato={{ valore }}" style="margin-right:1rem; {% if stato_filtro == valore %}font-weight:700; color:var(--navy);{% endif %}">{{ etichetta }}</a>
+    {% endfor %}
+</div>
+
+{% if jobs %}
+<table>
+    <thead>
+        <tr><th>ID</th><th>Cliente</th><th>Template</th><th>Stato</th><th>Destinazione</th><th>Creato</th></tr>
+    </thead>
+    <tbody>
+        {% for job in jobs %}
+        <tr>
+            <td>{{ job.pk }}</td>
+            <td class="mono">{{ job.client_id }}</td>
+            <td>{{ job.template.nome }}</td>
+            <td><span class="badge badge-{{ job.stato }}">{{ job.get_stato_display }}</span></td>
+            <td>{{ job.destinazione.nome_descrittivo|default:'—' }}</td>
+            <td>{{ job.created_at|date:'d/m/Y H:i' }}</td>
+        </tr>
+        {% if job.stato == 'errore' and job.errore_messaggio %}
+        <tr><td></td><td colspan="5" style="color:#991b1b; font-size:0.85rem;">{{ job.errore_messaggio }}</td></tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if is_paginated %}
+<p style="margin-top:1rem;">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if stato_filtro %}&stato={{ stato_filtro }}{% endif %}">&laquo; Precedenti</a>{% endif %}
+    <span style="margin:0 0.75rem; color:#94a3b8;">Pagina {{ page_obj.number }} di {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if stato_filtro %}&stato={{ stato_filtro }}{% endif %}">Successivi &raquo;</a>{% endif %}
+</p>
+{% endif %}
+{% else %}
+<p>Nessun job ancora. I Job nascono dalle chiamate API (<code>POST /genera</code>, <code>POST /pubblica</code>) o dall'azione "Genera anteprima" su un Template.</p>
+{% endif %}
+{% endblock %}

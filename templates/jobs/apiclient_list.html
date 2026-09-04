@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Client API — Postnect{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+    <h1>Client API</h1>
+    <a class="btn" href="{% url 'apiclient-create' %}">+ Nuovo client</a>
+</div>
+
+<p style="color:#64748b; font-size:0.9rem;">La API key va comunicata al cliente per autenticare le chiamate a <code>POST /genera</code> e <code>POST /pubblica</code> (header <code>X-API-Key</code>).</p>
+
+{% if api_clients %}
+<table>
+    <thead>
+        <tr><th>Cliente</th><th>API key</th><th>Attivo</th><th>Creato</th><th></th></tr>
+    </thead>
+    <tbody>
+        {% for api_client in api_clients %}
+        <tr>
+            <td class="mono">{{ api_client.client_id }}</td>
+            <td class="mono">{{ api_client.api_key|slice:":10" }}…</td>
+            <td>{% if api_client.attivo %}Sì{% else %}No{% endif %}</td>
+            <td>{{ api_client.created_at|date:'d/m/Y' }}</td>
+            <td style="white-space:nowrap;">
+                <form action="{% url 'apiclient-rigenera' api_client.pk %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary btn-small" onclick="return confirm('Rigenerare la API key? Quella attuale smetterà di funzionare.');">Rigenera key</button>
+                </form>
+                <a href="{% url 'apiclient-delete' api_client.pk %}" style="color:#ef4444; margin-left:0.75rem;">Elimina</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Nessun client API ancora. <a href="{% url 'apiclient-create' %}">Creane uno</a>.</p>
+{% endif %}
+{% endblock %}

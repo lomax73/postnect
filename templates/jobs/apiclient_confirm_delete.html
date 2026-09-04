@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Elimina client API — Postnect{% endblock %}
+
+{% block content %}
+<h1>Elimina client API</h1>
+<div class="card">
+    <p>
+        Eliminare il client per <strong class="mono">{{ object.client_id }}</strong>? La sua API key
+        smetterà immediatamente di funzionare per <code>POST /genera</code> e <code>POST /pubblica</code>.
+        L'operazione è definitiva.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Elimina</button>
+        <a class="btn btn-secondary" href="{% url 'apiclient-list' %}">Annulla</a>
+    </form>
+</div>
+{% endblock %}

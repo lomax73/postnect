@@ -1,0 +1,203 @@
+{% load static %}<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Postnect{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+    <style>
+        :root {
+            --azure: #27a5de;
+            --azure-dark: #1c85b8;
+            --azure-tint: #eaf6fc;
+            --navy: #123247;
+            --ink: #1f2937;
+            --paper: #f8fafc;
+            --border: #e2e8f0;
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Inter', system-ui, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            color: var(--ink);
+            background: var(--paper);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3 { font-family: var(--font-display); color: var(--navy); margin: 0 0 1rem; }
+        h1 { font-size: 1.5rem; font-weight: 600; }
+
+        a { color: var(--azure-dark); }
+
+        code, .mono { font-family: var(--font-mono); font-size: 0.9em; }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 220px;
+            flex-shrink: 0;
+            background: var(--navy);
+            color: #cbd8e2;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1rem;
+        }
+        .sidebar .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 2rem;
+            color: #fff;
+            text-decoration: none;
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .sidebar .brand img { width: 36px; height: 36px; border-radius: 50%; background: #fff; }
+        .sidebar nav { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+        .sidebar nav a {
+            color: #cbd8e2;
+            text-decoration: none;
+            padding: 0.55rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .sidebar nav a:hover, .sidebar nav a.active { background: rgba(39, 165, 222, 0.18); color: #fff; }
+        .sidebar .user-box {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.12);
+        }
+        .sidebar .user-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: var(--azure); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 0.85rem; flex-shrink: 0;
+        }
+        .sidebar .user-box form { margin: 0; }
+        .sidebar .user-box button {
+            background: none; border: none; color: #cbd8e2;
+            font-size: 0.85rem; cursor: pointer; padding: 0; text-decoration: underline;
+        }
+
+        .menu-toggle { display: none; }
+
+        /* --- Main content --- */
+        .main { flex: 1; min-width: 0; padding: 2rem 2.5rem; }
+        .main-inner { max-width: 1100px; margin: 0 auto; }
+
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(18,50,71,0.06); }
+        th, td { text-align: left; padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border); }
+        th { font-family: var(--font-display); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; background: #f1f5f9; }
+
+        .btn {
+            display: inline-block; padding: 0.5rem 1rem; border-radius: 8px;
+            background: var(--azure); color: #fff; text-decoration: none;
+            border: none; cursor: pointer; font-size: 0.95rem; font-weight: 600;
+            font-family: var(--font-body);
+        }
+        .btn:hover { background: var(--azure-dark); }
+        .btn:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+        .btn-secondary { background: #fff; color: var(--navy); border: 1px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--azure); }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-small { padding: 0.3rem 0.65rem; font-size: 0.85rem; }
+
+        .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+
+        form p { margin: 0.6rem 0; }
+        label { display: block; font-weight: 600; margin-bottom: 0.25rem; font-size: 0.9rem; color: var(--navy); }
+        input, textarea, select {
+            width: 100%; padding: 0.5rem 0.6rem; box-sizing: border-box;
+            border: 1px solid var(--border); border-radius: 6px; font-family: var(--font-body); font-size: 0.95rem;
+        }
+        input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--azure); outline-offset: 1px; }
+
+        .messages { list-style: none; padding: 0; margin: 0 0 1.5rem; }
+        .messages li { padding: 0.6rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .messages .success { background: #dcfce7; color: #166534; }
+        .messages .error { background: #fee2e2; color: #991b1b; }
+
+        .badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+        .badge-in_coda { background: #e5e7eb; color: #4b5563; }
+        .badge-generato { background: #dbeafe; color: #1d4ed8; }
+        .badge-pubblicato { background: #dcfce7; color: #166534; }
+        .badge-errore { background: #fee2e2; color: #991b1b; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; flex-direction: row; align-items: center; padding: 0.75rem 1rem; }
+            .sidebar .brand { margin-bottom: 0; }
+            .sidebar nav { position: fixed; top: 56px; left: 0; right: 0; bottom: 0; background: var(--navy); flex-direction: column; padding: 1rem; display: none; z-index: 20; }
+            .sidebar nav.open { display: flex; }
+            .sidebar .user-box { border-top: none; padding-top: 0; margin-left: auto; }
+            .sidebar .user-box span { display: none; }
+            .menu-toggle {
+                display: inline-flex; margin-left: 0.5rem; background: none; border: none;
+                color: #fff; font-size: 1.4rem; cursor: pointer; padding: 0.25rem 0.5rem;
+            }
+            .main { padding: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+<aside class="sidebar">
+    <a class="brand" href="{% url 'job-list' %}">
+        <img src="{% static 'img/logo.svg' %}" alt="">
+        Postnect
+    </a>
+    {% if user.is_authenticated %}
+    <button class="menu-toggle" type="button" onclick="document.getElementById('sidebar-nav').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+    <nav id="sidebar-nav">
+        <a href="{% url 'job-list' %}">Job</a>
+        <a href="{% url 'template-list' %}">Template</a>
+        <a href="{% url 'destinazione-list' %}">Destinazioni</a>
+        <a href="{% url 'apiclient-list' %}">Client API</a>
+        {% if PORTAL_PUBLIC_URL %}
+        <a href="{{ PORTAL_PUBLIC_URL }}/clienti/" target="_blank" rel="noopener">Clienti (Portale)</a>
+        {% endif %}
+        <a href="{% url 'admin:index' %}">Django admin</a>
+    </nav>
+    <div class="user-box">
+        <div class="user-avatar">{{ user.username|slice:":1"|upper }}</div>
+        <span>{{ user.username }}</span>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Esci</button>
+        </form>
+    </div>
+    {% endif %}
+</aside>
+<div class="main">
+    <div class="main-inner">
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </div>
+</div>
+<script>
+  window.FBOFLAG_APP = "postnect";
+  window.FBOFLAG_USER = "{{ request.user.username|default:'' }}";
+  window.FBOFLAG_HUB = "https://feedback.fbosolution.it";
+</script>
+<script src="https://feedback.fbosolution.it/static/fboflag.js" defer></script>
+</body>
+</html>

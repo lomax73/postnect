@@ -1,11 +1,17 @@
 import secrets
 
-from django import forms
 from django.contrib import admin, messages
 from django.utils.html import format_html
 
 from . import rendering
+from .forms import DestinazioneForm
 from .models import ApiClient, Destinazione, Job, Template
+
+# Registrazione nel Django admin di default: utile come strumento di
+# troubleshooting/gestione utenti Django (permessi, superuser) accanto alla
+# dashboard dedicata (jobs/dashboard_views.py, template in templates/jobs/),
+# che è l'interfaccia principale per il lavoro quotidiano su Template/
+# Destinazione/ApiClient/Job.
 
 
 @admin.register(ApiClient)
@@ -37,12 +43,7 @@ class TemplateAdmin(admin.ModelAdmin):
     @admin.action(description='Genera anteprima (dati di esempio)')
     def genera_anteprima(self, request, queryset):
         for template in queryset:
-            dati_esempio = {campo: f'esempio {campo}' for campo in template.campi_richiesti}
-            job = Job.objects.create(client_id=template.client_id, template=template, dati=dati_esempio)
-            # Sincrono (non accodato su Celery): un'anteprima admin deve
-            # essere immediata, non ha senso farla passare dal worker.
-            rendering.esegui_rendering(job)
-            job.refresh_from_db()
+            job = rendering.genera_job_anteprima(template)
             if job.stato == 'generato':
                 url = f'/media/{job.immagine_path}'
                 self.message_user(
@@ -54,32 +55,6 @@ class TemplateAdmin(admin.ModelAdmin):
                 self.message_user(
                     request, f'Anteprima di «{template.nome}» fallita: {job.errore_messaggio}', messages.ERROR,
                 )
-
-
-class DestinazioneForm(forms.ModelForm):
-    access_token = forms.CharField(
-        required=False, widget=forms.PasswordInput(render_value=False),
-        help_text='Lasciare vuoto per non modificare il token esistente.',
-    )
-
-    class Meta:
-        model = Destinazione
-        fields = ['client_id', 'piattaforma', 'page_id', 'nome_descrittivo']
-
-    def clean(self):
-        cleaned_data = super().clean()
-        if not self.instance.pk and not cleaned_data.get('access_token'):
-            self.add_error('access_token', 'Il token è obbligatorio alla creazione.')
-        return cleaned_data
-
-    def save(self, commit=True):
-        destinazione = super().save(commit=False)
-        token = self.cleaned_data.get('access_token')
-        if token:
-            destinazione.access_token = token
-        if commit:
-            destinazione.save()
-        return destinazione
 
 
 @admin.register(Destinazione)

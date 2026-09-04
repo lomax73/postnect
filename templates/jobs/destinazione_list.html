@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Destinazioni — Postnect{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+    <h1>Destinazioni</h1>
+    <a class="btn" href="{% url 'destinazione-create' %}">+ Nuova destinazione</a>
+</div>
+
+{% if destinazioni %}
+<table>
+    <thead>
+        <tr><th>Nome</th><th>Piattaforma</th><th>Cliente</th><th>Page ID</th><th></th></tr>
+    </thead>
+    <tbody>
+        {% for destinazione in destinazioni %}
+        <tr>
+            <td>{{ destinazione.nome_descrittivo }}</td>
+            <td>{{ destinazione.get_piattaforma_display }}</td>
+            <td class="mono">{{ destinazione.client_id }}</td>
+            <td class="mono">{{ destinazione.page_id }}</td>
+            <td style="white-space:nowrap;">
+                <a href="{% url 'destinazione-update' destinazione.pk %}">Modifica</a>
+                <a href="{% url 'destinazione-delete' destinazione.pk %}" style="color:#ef4444; margin-left:0.75rem;">Elimina</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Nessuna destinazione ancora. <a href="{% url 'destinazione-create' %}">Creane una</a>.</p>
+{% endif %}
+{% endblock %}

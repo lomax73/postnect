@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Template — Postnect{% endblock %}
+
+{% block content %}
+<h1>{% if object %}Modifica template{% else %}Nuovo template{% endif %}</h1>
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn" type="submit">Salva</button>
+        <a class="btn btn-secondary" href="{% url 'template-list' %}">Annulla</a>
+    </form>
+</div>
+{% endblock %}

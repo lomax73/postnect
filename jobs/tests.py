@@ -188,7 +188,7 @@ class IsolamentoClientiTests(ApiTestBase):
 
 
 class GeneraPubblicaViewTests(ApiTestBase):
-    @patch('jobs.views.tasks.process_job.delay')
+    @patch('jobs.api_views.tasks.process_job.delay')
     def test_genera_crea_job_e_lo_accoda(self, mock_delay):
         resp = self.client.post(
             '/genera', data=json.dumps({'template_id': self.template_a.pk, 'dati': {'avversario': 'Inter', 'risultato': '2-1'}}),
@@ -202,7 +202,7 @@ class GeneraPubblicaViewTests(ApiTestBase):
         self.assertIsNone(job.destinazione)
         mock_delay.assert_called_once_with(job.pk)
 
-    @patch('jobs.views.tasks.process_job.delay')
+    @patch('jobs.api_views.tasks.process_job.delay')
     def test_pubblica_crea_job_con_destinazione_e_caption(self, mock_delay):
         resp = self.client.post(
             '/pubblica', data=json.dumps({
@@ -276,7 +276,7 @@ class AdminTests(ApiTestBase):
         self.assertTrue(job.immagine_path)
 
     def test_destinazione_form_richiede_token_alla_creazione(self):
-        from jobs.admin import DestinazioneForm
+        from jobs.forms import DestinazioneForm
         form = DestinazioneForm(data={
             'client_id': self.CLIENT_A, 'piattaforma': 'facebook',
             'page_id': '999', 'nome_descrittivo': 'Nuova pagina', 'access_token': '',
@@ -284,7 +284,7 @@ class AdminTests(ApiTestBase):
         self.assertFalse(form.is_valid())
 
     def test_destinazione_form_non_richiede_token_in_modifica(self):
-        from jobs.admin import DestinazioneForm
+        from jobs.forms import DestinazioneForm
         form = DestinazioneForm(data={
             'client_id': self.CLIENT_A, 'piattaforma': 'facebook',
             'page_id': self.destinazione_a.page_id, 'nome_descrittivo': 'Rinominata', 'access_token': '',
@@ -292,3 +292,74 @@ class AdminTests(ApiTestBase):
         self.assertTrue(form.is_valid())
         destinazione = form.save()
         self.assertEqual(destinazione.access_token, 'token-segreto')
+
+
+class DashboardTests(ApiTestBase):
+    """Dashboard interna (jobs/dashboard_views.py, templates/jobs/*.html):
+    autenticazione richiesta e flussi principali via form."""
+
+    def _login(self):
+        from django.contrib.auth.models import User
+        User.objects.create_user('dashboarduser', password='password123')
+        self.client.login(username='dashboarduser', password='password123')
+
+    def test_job_list_richiede_login(self):
+        resp = self.client.get('/')
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/login/', resp.url)
+
+    def test_template_list_richiede_login(self):
+        resp = self.client.get('/templates/')
+        self.assertEqual(resp.status_code, 302)
+
+    def test_job_list_mostra_i_job_del_cliente(self):
+        self._login()
+        Job.objects.create(client_id=self.CLIENT_A, template=self.template_a, dati={})
+        resp = self.client.get('/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Job recenti')
+
+    def test_crea_template_via_dashboard(self):
+        self._login()
+        resp = self.client.post('/templates/nuovo/', data={
+            'client_id': self.CLIENT_A, 'nome': 'Nuovo template',
+            'html_content': '<h1>{{x}}</h1>', 'css_content': '',
+            'campi_richiesti_csv': 'x, y', 'attivo': 'on',
+        })
+        self.assertRedirects(resp, '/templates/')
+        template = Template.objects.get(nome='Nuovo template')
+        self.assertEqual(template.campi_richiesti, ['x', 'y'])
+
+    def test_genera_anteprima_via_dashboard(self):
+        self._login()
+        resp = self.client.post(f'/templates/{self.template_a.pk}/anteprima/')
+        self.assertRedirects(resp, '/templates/')
+        job = Job.objects.filter(template=self.template_a).latest('created_at')
+        self.assertEqual(job.stato, 'generato')
+
+    def test_crea_apiclient_via_dashboard_mostra_key_una_tantum(self):
+        self._login()
+        resp = self.client.post('/client-api/nuovo/', data={
+            'client_id': self.CLIENT_B, 'attivo': 'on',
+        }, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        msgs = [str(m) for m in resp.context['messages']]
+        self.assertTrue(any('API key' in m for m in msgs))
+
+    def test_rigenera_api_key_via_dashboard(self):
+        self._login()
+        vecchia = self.api_client_a.api_key
+        resp = self.client.post(f'/client-api/{self.api_client_a.pk}/rigenera/')
+        self.assertRedirects(resp, '/client-api/')
+        self.api_client_a.refresh_from_db()
+        self.assertNotEqual(self.api_client_a.api_key, vecchia)
+
+    def test_crea_destinazione_via_dashboard(self):
+        self._login()
+        resp = self.client.post('/destinazioni/nuova/', data={
+            'client_id': self.CLIENT_A, 'piattaforma': 'facebook',
+            'page_id': '999', 'nome_descrittivo': 'Nuova pagina', 'access_token': 'segreto-nuovo',
+        })
+        self.assertRedirects(resp, '/destinazioni/')
+        destinazione = Destinazione.objects.get(nome_descrittivo='Nuova pagina')
+        self.assertEqual(destinazione.access_token, 'segreto-nuovo')

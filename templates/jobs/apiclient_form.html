@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Client API — Postnect{% endblock %}
+
+{% block content %}
+<h1>Nuovo client API</h1>
+<div class="card">
+    <p style="color:#64748b; font-size:0.9rem; margin-top:0;">
+        Il <code>client_id</code> deve corrispondere a un cliente esistente nell'anagrafica del
+        Portale FBO. La API key viene generata automaticamente e mostrata una sola volta dopo il salvataggio.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn" type="submit">Crea</button>
+        <a class="btn btn-secondary" href="{% url 'apiclient-list' %}">Annulla</a>
+    </form>
+</div>
+{% endblock %}
