@@ -186,6 +186,19 @@ class IsolamentoClientiTests(ApiTestBase):
         resp = self.client.get(f'/job/{job.pk}/', **self._headers(self.api_client_b.api_key))
         self.assertEqual(resp.status_code, 404)
 
+    def test_job_detail_payload(self):
+        job = Job.objects.create(
+            client_id=self.CLIENT_A, template=self.template_a, dati={},
+            stato='generato', immagine_path='renders/job_9.png',
+        )
+        resp = self.client.get(f'/job/{job.pk}/', **self._headers(self.api_client_a.api_key))
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+        self.assertEqual(body['stato'], 'generato')
+        self.assertEqual(body['immagine_path'], 'renders/job_9.png')
+        self.assertTrue(body['immagine_url'].endswith('/media/renders/job_9.png'))
+        self.assertTrue(body['immagine_url'].startswith('http'))
+
 
 class GeneraPubblicaViewTests(ApiTestBase):
     @patch('jobs.api_views.tasks.process_job.delay')

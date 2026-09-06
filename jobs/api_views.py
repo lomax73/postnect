@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -38,11 +39,15 @@ class ApiKeyAuthView(View):
             return None, JsonResponse({'detail': 'JSON non valido.'}, status=400)
 
 
-def _serialize_job(job):
+def _serialize_job(job, request):
+    immagine_url = None
+    if job.immagine_path:
+        immagine_url = request.build_absolute_uri(settings.MEDIA_URL + job.immagine_path)
     return {
         'job_id': job.pk,
         'stato': job.stato,
         'immagine_path': job.immagine_path,
+        'immagine_url': immagine_url,
         'post_id_risultante': job.post_id_risultante,
         'errore_messaggio': job.errore_messaggio,
     }
@@ -104,4 +109,4 @@ class JobDetailView(ApiKeyAuthView):
         job = Job.objects.filter(pk=pk, client_id=self.api_client.client_id).first()
         if job is None:
             return JsonResponse({'detail': 'Job non trovato.'}, status=404)
-        return JsonResponse(_serialize_job(job))
+        return JsonResponse(_serialize_job(job, request))
