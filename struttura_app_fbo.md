@@ -230,10 +230,12 @@ Se c'è Celery, aggiungere una seconda unit `<nomeapp>-worker.service` con
    (`ss -tlnp` + `grep listen /etc/nginx/sites-available/*`): `8443` Portal,
    `8444` FiberReport, `8445` Preventivi, `8446` RackReport, `8447`
    NetVault, `8448` Squadfy, `8449` MKRemote, `8450` FBOMailer, `8451`
-   FBOLeads, `8452` FBOAIGate, `8453` Sicufy → prossima libera **`8454`**
-   (assegnata a Postnect in questa sessione). Ri-verificare comunque con
-   `ss -tlnp` + i conf in `/etc/nginx/sites-available/` prima di assegnarne
-   una nuova: questa lista può disallinearsi nel tempo. Motivo per cui la
+   FBOLeads, `8452` FBOAIGate, `8453` Sicufy, `8454` Postnect → prossima
+   libera **`8455`**. Ri-verificare comunque con `ss -tlnp` + i conf in
+   `/etc/nginx/sites-available/` prima di assegnarne una nuova: questa lista
+   può disallinearsi nel tempo. Nota: dopo la migrazione a dominio la porta
+   dedicata diventa loopback-only (`listen 127.0.0.1:<porta>`) e viene
+   chiusa su UFW — resta comunque "occupata" per l'API interna. Motivo per cui la
    porta dev'essere dedicata (non condivisa su 443): il routing nginx si
    basa su `server_name`/header `Host`, e una chiamata interna verso
    `127.0.0.1` senza SNI/Host corretto finisce sul vhost sbagliato (vedi
@@ -286,6 +288,44 @@ Alcune app (es. FBOPreventivi) hanno anche un `deploy.sh` alla radice del
 repo che automatizza git push + comandi VPS via SSH (host `mkremote-vps`
 già configurato in `~/.ssh/config`), con opzioni `-m`, `-s`, `-g`. Comodo da
 replicare per una nuova app quando il deploy manuale è rodato.
+
+### Migrazione da ip-provisional a dominio vero
+
+Procedura verificata su Postnect il 2026-09-06 (`deploy/README.md` di
+Postnect ha i comandi esatti):
+
+1. Vhost porta 80 dedicato (`nginx-<nomeapp>-80.conf`): challenge ACME
+   (`/.well-known/acme-challenge/` → `root /var/www/html`) + `return 301
+   https://$host$request_uri`. Stesso pattern di `fbomailer-80`.
+2. `certbot certonly --webroot -w /var/www/html -d <nomeapp>.fbosolution.it`
+   — **webroot, non `--nginx`**: `--nginx` riscrive i vhost in modo
+   imprevedibile, meglio gestire i file a mano.
+3. Vhost finale: **due `server{}`** — uno `listen 443 ssl` pubblico
+   (`server_name <nomeapp>.fbosolution.it`), uno `listen 127.0.0.1:<porta>
+   ssl` (`server_name 127.0.0.1`) solo per `/api/internal/`. Entrambi con
+   il cert Let's Encrypt. Il blocco interno resta sulla **porta dedicata**
+   (8443-84xx), ma bind esplicito su `127.0.0.1`.
+4. ⚠️ **`systemctl restart nginx`, NON `reload`**: passando `listen <porta>`
+   da `0.0.0.0` a `127.0.0.1` il worker vecchio tiene ancora la porta, il
+   `reload` fallisce **in silenzio** (`systemctl reload` esce 0, l'errore è
+   solo in `/var/log/nginx/error.log`: `bind() ... Address already in use`)
+   e nginx continua a servire la config vecchia. Sintomo: il dominio nuovo
+   risponde con il certificato del vhost di default (il primo `listen 443`).
+5. Cert **pinnato** per l'API interna del Portale (RedFlag id 87): il
+   Portale verifica il TLS verso `127.0.0.1:<porta>` con `check_hostname
+   =False` + CA pinning, quindi gli serve il fullchain leggibile fuori da
+   `/etc/letsencrypt` (700 root):
+   `cp /etc/letsencrypt/live/<dominio>/fullchain.pem
+   /etc/ssl/pinned-certs/<nome>.pem`, `chmod 644`, **e aggiungere la riga
+   `cp` in `/etc/letsencrypt/renewal-hooks/deploy/copy-pinned-certs.sh`**
+   (altrimenti al rinnovo il pin va stale e il Portale non raggiunge più
+   l'app). Poi `AppLink.internal_ca_cert` → quel path.
+6. `.env`: aggiungere il dominio a `DJANGO_ALLOWED_HOSTS`, `systemctl
+   restart <nomeapp>-web <nomeapp>-worker`.
+7. `AppLink` nel Portale: `url` → `https://<nomeapp>.fbosolution.it/`
+   (`internal_base_url` resta `https://127.0.0.1:<porta>`).
+8. `ufw delete allow <porta>/tcp` — dopo la migrazione la porta dedicata è
+   solo loopback, non va più esposta.
 
 ## File di tracciamento del progetto (convenzioni trasversali)
 

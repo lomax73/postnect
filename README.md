@@ -48,13 +48,13 @@ venv/bin/celery -A postnect worker -l info
   admin — vedi `jobs/admin.py`. `deploy/` creato seguendo il pattern in
   `struttura_app_fbo.md`.
 
-Tutti i prompt di `prompt-claude-code-postnect.md` sono completati. 24 test,
-tutti verdi (`venv/bin/python manage.py test`).
+Tutti i prompt di `prompt-claude-code-postnect.md` sono completati, più una
+dashboard web custom coerente con le altre app FBO. 32 test, tutti verdi
+(`venv/bin/python manage.py test`).
 
 ## Deploy
 
-**In produzione (ip-provisional)**: `https://94.177.161.127:8454/`,
-deployato, verificato end-to-end e integrato col Portale FBO (anagrafica
-clienti + gestione utenti) il 2026-09-04. Registrato nel Portale come
-`AppLink` (slug `postnect`). Vedi `deploy/README.md` per lo stato
-dettagliato.
+**In produzione**: `https://postnect.fbosolution.it/` (Let's Encrypt).
+Deployato, verificato end-to-end e integrato col Portale FBO (anagrafica
+clienti + gestione utenti). Registrato nel Portale come `AppLink` (slug
+`postnect`). Vedi `deploy/README.md` per lo storico e la procedura.
