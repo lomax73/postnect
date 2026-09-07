@@ -26,7 +26,15 @@
             <td>{% if api_client.attivo %}Sì{% else %}No{% endif %}</td>
             <td>{{ api_client.created_at|date:'d/m/Y' }}</td>
             <td style="white-space:nowrap;">
-                <form action="{% url 'apiclient-rigenera' api_client.pk %}" method="post" style="display:inline;">
+                <form action="{% url 'apiclient-sospendi' api_client.pk %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    {% if api_client.attivo %}
+                    <button type="submit" class="btn btn-secondary btn-small" onclick="return confirm('Sospendere questo client? Le sue chiamate API verranno rifiutate finché non lo riattivi.');">Sospendi</button>
+                    {% else %}
+                    <button type="submit" class="btn btn-secondary btn-small">Riattiva</button>
+                    {% endif %}
+                </form>
+                <form action="{% url 'apiclient-rigenera' api_client.pk %}" method="post" style="display:inline; margin-left:0.75rem;">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-secondary btn-small" onclick="return confirm('Rigenerare la API key? Quella attuale smetterà di funzionare.');">Rigenera key</button>
                 </form>

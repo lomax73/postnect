@@ -26,4 +26,5 @@ urlpatterns = [
     path('client-api/nuovo/', dashboard_views.ApiClientCreateView.as_view(), name='apiclient-create'),
     path('client-api/<int:pk>/elimina/', dashboard_views.ApiClientDeleteView.as_view(), name='apiclient-delete'),
     path('client-api/<int:pk>/rigenera/', dashboard_views.ApiClientRigeneraView.as_view(), name='apiclient-rigenera'),
+    path('client-api/<int:pk>/sospendi/', dashboard_views.ApiClientSospendiView.as_view(), name='apiclient-sospendi'),
 ]

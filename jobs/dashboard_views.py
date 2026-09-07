@@ -183,3 +183,19 @@ class ApiClientRigeneraView(LoginRequiredMixin, View):
             f'API key rigenerata (copiala ora, non sarà più mostrata per intero): {api_client.api_key}',
         )
         return redirect('apiclient-list')
+
+
+class ApiClientSospendiView(LoginRequiredMixin, View):
+    """Solo POST: alterna attivo/sospeso. Un client sospeso vede rifiutate
+    le chiamate a /genera, /pubblica e /job/<id> (vedi api_views._autentica,
+    che filtra già su attivo=True)."""
+
+    def post(self, request, pk):
+        api_client = get_object_or_404(ApiClient, pk=pk)
+        api_client.attivo = not api_client.attivo
+        api_client.save(update_fields=['attivo'])
+        if api_client.attivo:
+            messages.success(request, 'Client riattivato.')
+        else:
+            messages.success(request, 'Client sospeso: le sue chiamate API verranno rifiutate.')
+        return redirect('apiclient-list')
