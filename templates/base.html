@@ -166,9 +166,6 @@
         <a href="{% url 'template-list' %}">Template</a>
         <a href="{% url 'destinazione-list' %}">Destinazioni</a>
         <a href="{% url 'apiclient-list' %}">Client API</a>
-        {% if PORTAL_PUBLIC_URL %}
-        <a href="{{ PORTAL_PUBLIC_URL }}/clienti/" target="_blank" rel="noopener">Clienti (Portale)</a>
-        {% endif %}
         <a href="{% url 'admin:index' %}">Django admin</a>
     </nav>
     <div class="user-box">
