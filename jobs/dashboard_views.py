@@ -5,6 +5,7 @@ api_views.py."""
 
 import secrets
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect
@@ -42,7 +43,24 @@ class TemplateListView(LoginRequiredMixin, ListView):
     context_object_name = 'templates'
 
     def get_queryset(self):
-        return Template.objects.order_by('nome')
+        templates = list(Template.objects.order_by('nome'))
+        # Ultima anteprima generata per ogni template (Job con immagine
+        # pronta, il più recente), per il link "occhio" in tabella —
+        # senza questo la generazione non aveva alcun modo di essere
+        # vista dopo il redirect.
+        ultimi_job = {}
+        if templates:
+            # .distinct('campo') è solo Postgres: qui il db è sqlite, quindi
+            # si tiene il primo (il più recente, per l'order_by) per ogni
+            # template_id incontrato scorrendo in Python.
+            for job in Job.objects.filter(
+                template__in=templates, immagine_path__isnull=False,
+            ).exclude(immagine_path='').order_by('-created_at'):
+                ultimi_job.setdefault(job.template_id, job)
+        for template in templates:
+            job = ultimi_job.get(template.pk)
+            template.ultima_anteprima_url = settings.MEDIA_URL + job.immagine_path if job else None
+        return templates
 
 
 class TemplateCreateView(LoginRequiredMixin, CreateView):
