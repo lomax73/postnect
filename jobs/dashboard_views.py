@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView, View
 
-from . import rendering
+from . import portal_client, rendering
 from .forms import ApiClientForm, DestinazioneForm, TemplateForm
 from .models import ApiClient, Destinazione, Job, Template
 
@@ -114,7 +114,19 @@ class ApiClientListView(LoginRequiredMixin, ListView):
     context_object_name = 'api_clients'
 
     def get_queryset(self):
-        return ApiClient.objects.order_by('-created_at')
+        api_clients = list(ApiClient.objects.order_by('-created_at'))
+        # Postnect non ha un modello Cliente locale: il nome va risolto
+        # dall'anagrafica condivisa del Portale. Una sola chiamata (lista
+        # completa) invece di una per ApiClient, con fallback silenzioso
+        # se il Portale non risponde (l'id resta comunque visibile).
+        try:
+            nomi_per_id = {str(c['id']): c['ragione_sociale'] for c in portal_client.list_clienti()}
+        except portal_client.PortalUnavailableError:
+            nomi_per_id = {}
+            messages.warning(self.request, 'Impossibile contattare il Portale per i nomi dei clienti: mostrati solo gli ID.')
+        for api_client in api_clients:
+            api_client.nome_cliente = nomi_per_id.get(str(api_client.client_id))
+        return api_clients
 
 
 class ApiClientCreateView(LoginRequiredMixin, CreateView):

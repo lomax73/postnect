@@ -18,7 +18,10 @@
     <tbody>
         {% for api_client in api_clients %}
         <tr>
-            <td class="mono">{{ api_client.client_id }}</td>
+            <td>
+                {% if api_client.nome_cliente %}{{ api_client.nome_cliente }}{% else %}<span style="color:#94a3b8;">Cliente non disponibile</span>{% endif %}
+                <br><span class="mono" style="color:#94a3b8; font-size:0.8rem;">{{ api_client.client_id }}</span>
+            </td>
             <td class="mono">{{ api_client.api_key|slice:":10" }}…</td>
             <td>{% if api_client.attivo %}Sì{% else %}No{% endif %}</td>
             <td>{{ api_client.created_at|date:'d/m/Y' }}</td>
