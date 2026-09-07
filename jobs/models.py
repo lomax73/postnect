@@ -44,6 +44,12 @@ class Template(models.Model):
         default=list,
         help_text='Elenco dei placeholder attesi nei dati del Job, es. ["avversario", "risultato", "data"].',
     )
+    larghezza = models.PositiveIntegerField(
+        default=1200, help_text='Larghezza dello screenshot in pixel. Default 1200x630 (formato Facebook link/foto).',
+    )
+    altezza = models.PositiveIntegerField(
+        default=630, help_text='Altezza dello screenshot in pixel (solo il viewport iniziale: se il contenuto è più alto, lo screenshot lo segue comunque per intero).',
+    )
     attivo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -11,13 +11,6 @@ from playwright.sync_api import sync_playwright
 
 PLACEHOLDER_RE = re.compile(r'\{\{\s*(\w+)\s*\}\}')
 
-# Dimensioni di default del viewport per lo screenshot (formato social
-# standard, 1200x630 — es. Facebook link/photo preview). Non configurabile
-# per Template in questo step: se in futuro servirà, aggiungere un campo
-# dedicato al modello Template invece di dedurlo dall'HTML.
-VIEWPORT_WIDTH = 1200
-VIEWPORT_HEIGHT = 630
-
 
 def campi_mancanti(template, dati):
     """Elenco dei campi in Template.campi_richiesti non presenti come
@@ -45,10 +38,14 @@ def _documento_html(html_content, css_content):
     return f'<!doctype html><html><head><meta charset="utf-8">{css}</head><body>{html_content}</body></html>'
 
 
-def render_html_to_image(html_content, css_content, output_path):
+def render_html_to_image(html_content, css_content, output_path, larghezza=1200, altezza=630):
     """Fa uno screenshot dell'HTML (con CSS inline) e lo salva su
     output_path (PNG). output_path può essere str o Path; le directory
-    intermedie vengono create se mancanti."""
+    intermedie vengono create se mancanti. larghezza/altezza impostano il
+    viewport iniziale (di norma le dimensioni volute del Template): lo
+    screenshot è comunque full_page, quindi se il contenuto è più alto
+    del viewport lo segue per intero — l'altezza qui serve principalmente
+    a dare a Playwright un punto di partenza coerente col layout."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -56,7 +53,7 @@ def render_html_to_image(html_content, css_content, output_path):
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
         try:
-            page = browser.new_page(viewport={'width': VIEWPORT_WIDTH, 'height': VIEWPORT_HEIGHT})
+            page = browser.new_page(viewport={'width': larghezza, 'height': altezza})
             page.set_content(documento, wait_until='load')
             page.screenshot(path=str(output_path), full_page=True)
         finally:
@@ -83,7 +80,7 @@ def esegui_rendering(job):
     output_path = Path(settings.MEDIA_ROOT) / relative_path
 
     try:
-        render_html_to_image(html, template.css_content, output_path)
+        render_html_to_image(html, template.css_content, output_path, template.larghezza, template.altezza)
     except Exception as exc:  # noqa: BLE001 — qualunque errore di rendering finisce sul Job, non deve far fallire il task Celery
         job.stato = 'errore'
         job.errore_messaggio = f'Errore durante il rendering: {exc}'

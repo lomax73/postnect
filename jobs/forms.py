@@ -12,7 +12,7 @@ class TemplateForm(forms.ModelForm):
 
     class Meta:
         model = Template
-        fields = ['client_id', 'nome', 'html_content', 'css_content', 'attivo']
+        fields = ['client_id', 'nome', 'html_content', 'css_content', 'larghezza', 'altezza', 'attivo']
         widgets = {
             'html_content': forms.Textarea(attrs={'rows': 10, 'class': 'mono'}),
             'css_content': forms.Textarea(attrs={'rows': 6, 'class': 'mono'}),
