@@ -11,11 +11,12 @@
 {% if templates %}
 <table>
     <thead>
-        <tr><th>Nome</th><th>Cliente</th><th>Campi richiesti</th><th>Attivo</th><th></th></tr>
+        <tr><th>ID</th><th>Nome</th><th>Cliente</th><th>Campi richiesti</th><th>Attivo</th><th></th></tr>
     </thead>
     <tbody>
         {% for template in templates %}
         <tr>
+            <td class="mono">{{ template.pk }}</td>
             <td>{{ template.nome }}</td>
             <td class="mono">{{ template.client_id }}</td>
             <td>{{ template.campi_richiesti|join:", " }}</td>

@@ -11,11 +11,12 @@
 {% if destinazioni %}
 <table>
     <thead>
-        <tr><th>Nome</th><th>Piattaforma</th><th>Cliente</th><th>Page ID</th><th></th></tr>
+        <tr><th>ID</th><th>Nome</th><th>Piattaforma</th><th>Cliente</th><th>Page ID</th><th></th></tr>
     </thead>
     <tbody>
         {% for destinazione in destinazioni %}
         <tr>
+            <td class="mono">{{ destinazione.pk }}</td>
             <td>{{ destinazione.nome_descrittivo }}</td>
             <td>{{ destinazione.get_piattaforma_display }}</td>
             <td class="mono">{{ destinazione.client_id }}</td>
