@@ -8,6 +8,7 @@ from pathlib import Path
 
 import requests
 from django.conf import settings
+from django.utils import timezone
 
 GRAPH_API_BASE = 'https://graph.facebook.com'
 TIMEOUT = 30
@@ -16,6 +17,25 @@ TIMEOUT = 30
 class PublishError(Exception):
     """La pubblicazione sulla piattaforma social è fallita (errore HTTP,
     risposta inattesa, credenziali non valide...)."""
+
+
+def finestra_automatica_attiva(destinazione):
+    """True se, in questo momento, la pubblicazione automatica per questa
+    Destinazione è permessa (attiva + dentro l'eventuale finestra
+    giorni/orario). Postnect è l'unico responsabile di questa decisione:
+    il consenso del chiamante (Job.consenso_pubblicazione) è necessario ma
+    non passa mai da qui — va controllato a parte da chi chiama."""
+    if not destinazione.pubblicazione_automatica:
+        return False
+    adesso = timezone.localtime()
+    if destinazione.automatica_giorni and adesso.weekday() not in destinazione.automatica_giorni:
+        return False
+    ora = adesso.time()
+    if destinazione.automatica_ora_inizio and ora < destinazione.automatica_ora_inizio:
+        return False
+    if destinazione.automatica_ora_fine and ora > destinazione.automatica_ora_fine:
+        return False
+    return True
 
 
 class SocialPublisher(ABC):

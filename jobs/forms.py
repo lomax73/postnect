@@ -35,15 +35,38 @@ class TemplateForm(forms.ModelForm):
         return template
 
 
+GIORNI_SETTIMANA = [
+    (0, 'Lunedì'), (1, 'Martedì'), (2, 'Mercoledì'), (3, 'Giovedì'),
+    (4, 'Venerdì'), (5, 'Sabato'), (6, 'Domenica'),
+]
+
+
 class DestinazioneForm(forms.ModelForm):
     access_token = forms.CharField(
         required=False, widget=forms.PasswordInput(render_value=False),
         help_text='Lasciare vuoto per non modificare il token esistente.',
     )
+    automatica_giorni_scelti = forms.MultipleChoiceField(
+        label='Giorni pubblicazione automatica', required=False, choices=GIORNI_SETTIMANA,
+        widget=forms.CheckboxSelectMultiple,
+        help_text='Nessuno selezionato = tutti i giorni (se la pubblicazione automatica è attiva).',
+    )
 
     class Meta:
         model = Destinazione
-        fields = ['client_id', 'piattaforma', 'page_id', 'nome_descrittivo']
+        fields = [
+            'client_id', 'piattaforma', 'page_id', 'nome_descrittivo',
+            'pubblicazione_automatica', 'automatica_ora_inizio', 'automatica_ora_fine',
+        ]
+        widgets = {
+            'automatica_ora_inizio': forms.TimeInput(attrs={'type': 'time'}),
+            'automatica_ora_fine': forms.TimeInput(attrs={'type': 'time'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['automatica_giorni_scelti'].initial = [str(g) for g in self.instance.automatica_giorni]
 
     def clean(self):
         cleaned_data = super().clean()
@@ -56,6 +79,7 @@ class DestinazioneForm(forms.ModelForm):
         token = self.cleaned_data.get('access_token')
         if token:
             destinazione.access_token = token
+        destinazione.automatica_giorni = [int(g) for g in self.cleaned_data.get('automatica_giorni_scelti', [])]
         if commit:
             destinazione.save()
         return destinazione

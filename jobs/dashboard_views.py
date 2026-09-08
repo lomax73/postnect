@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView, View
 
-from . import portal_client, rendering
+from . import portal_client, publishing, rendering
 from .forms import ApiClientForm, DestinazioneForm, TemplateForm
 from .models import ApiClient, Destinazione, Job, Template
 
@@ -37,7 +37,34 @@ class JobListView(LoginRequiredMixin, ListView):
         context['stati'] = Job.STATO_CHOICES
         for job in context['jobs']:
             job.immagine_url = settings.MEDIA_URL + job.immagine_path if job.immagine_path else None
+            job.pronto_da_pubblicare = (
+                job.stato == 'generato' and job.destinazione_id and not job.post_id_risultante
+            )
         return context
+
+
+class JobPubblicaView(LoginRequiredMixin, View):
+    """Solo POST: pubblica manualmente un Job pronto (generato, con
+    Destinazione, non ancora pubblicato) — l'azione con cui un operatore
+    decide di suo pugno, indipendentemente da consenso_pubblicazione e
+    dalla finestra automatica (quelle contano solo per la pubblicazione
+    automatica in tasks.process_job)."""
+
+    def post(self, request, pk):
+        job = get_object_or_404(Job, pk=pk)
+        if job.stato != 'generato' or not job.destinazione_id:
+            messages.error(request, 'Questo job non è pronto per la pubblicazione (serve stato «generato» e una destinazione).')
+            return redirect('job-list')
+        if job.post_id_risultante:
+            messages.error(request, 'Questo job risulta già pubblicato.')
+            return redirect('job-list')
+        publishing.esegui_pubblicazione(job)
+        job.refresh_from_db()
+        if job.stato == 'pubblicato':
+            messages.success(request, f'Job #{job.pk} pubblicato (post {job.post_id_risultante}).')
+        else:
+            messages.error(request, f'Pubblicazione fallita: {job.errore_messaggio}')
+        return redirect('job-list')
 
 
 class JobDeleteView(LoginRequiredMixin, DeleteView):

@@ -99,6 +99,10 @@ class PubblicaView(ApiKeyAuthView):
             dati=data.get('dati') or {},
             destinazione=destinazione,
             caption=data.get('caption') or '',
+            # Consenso del chiamante (es. direttore sportivo via Squadfy):
+            # necessario ma non sufficiente perché Postnect pubblichi da
+            # solo — decide comunque Postnect, vedi tasks.process_job.
+            consenso_pubblicazione=bool(data.get('consenso')),
         )
         tasks.process_job.delay(job.pk)
         return JsonResponse({'job_id': job.pk, 'stato': job.stato}, status=202)

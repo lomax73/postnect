@@ -11,7 +11,7 @@
 {% if destinazioni %}
 <table>
     <thead>
-        <tr><th>ID</th><th>Nome</th><th>Piattaforma</th><th>Cliente</th><th>Page ID</th><th></th></tr>
+        <tr><th>ID</th><th>Nome</th><th>Piattaforma</th><th>Cliente</th><th>Page ID</th><th>Pubblicazione</th><th></th></tr>
     </thead>
     <tbody>
         {% for destinazione in destinazioni %}
@@ -21,6 +21,13 @@
             <td>{{ destinazione.get_piattaforma_display }}</td>
             <td class="mono">{{ destinazione.client_id }}</td>
             <td class="mono">{{ destinazione.page_id }}</td>
+            <td>
+                {% if destinazione.pubblicazione_automatica %}
+                Automatica{% if destinazione.automatica_ora_inizio or destinazione.automatica_ora_fine %} ({{ destinazione.automatica_ora_inizio|default:'00:00' }}–{{ destinazione.automatica_ora_fine|default:'24:00' }}){% endif %}
+                {% else %}
+                Manuale
+                {% endif %}
+            </td>
             <td style="white-space:nowrap;">
                 <a href="{% url 'destinazione-update' destinazione.pk %}">Modifica</a>
                 <a href="{% url 'destinazione-delete' destinazione.pk %}" style="color:#ef4444; margin-left:0.75rem;">Elimina</a>

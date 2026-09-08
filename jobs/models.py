@@ -70,6 +70,30 @@ class Destinazione(models.Model):
         help_text='Access token cifrato con Fernet (MASTER_ENCRYPTION_KEY). Non leggere/scrivere direttamente: usare access_token.',
     )
     nome_descrittivo = models.CharField(max_length=255, help_text='Es. "Pagina FB ASD Calcio Olgiate".')
+
+    # Pubblicazione automatica: di default OGNI pubblicazione è manuale
+    # (un operatore la conferma dalla dashboard, vedi JobPubblicaView) anche
+    # quando il chiamante (es. Squadfy) ha dato consenso — Postnect resta
+    # l'unico responsabile della decisione finale, mai il chiamante. Questi
+    # campi permettono di delegare la decisione in automatico solo dentro
+    # una finestra giorni/orario esplicita, e solo se consenso_pubblicazione
+    # sul Job è True (vedi publishing.finestra_automatica_attiva).
+    pubblicazione_automatica = models.BooleanField(
+        default=False,
+        help_text='Se attivo, i Job con consenso pubblicano da soli (dentro la finestra sotto), senza intervento manuale.',
+    )
+    automatica_giorni = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Giorni della settimana in cui è valida la pubblicazione automatica (0=lunedì...6=domenica). Vuoto = tutti i giorni.',
+    )
+    automatica_ora_inizio = models.TimeField(
+        null=True, blank=True, help_text='Inizio della finestra oraria per la pubblicazione automatica. Vuoto = nessun limite iniziale.',
+    )
+    automatica_ora_fine = models.TimeField(
+        null=True, blank=True, help_text='Fine della finestra oraria per la pubblicazione automatica. Vuoto = nessun limite finale.',
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -105,6 +129,13 @@ class Job(models.Model):
     caption = models.TextField(
         blank=True, null=True,
         help_text='Didascalia da usare in pubblicazione (POST /pubblica). Non usata se destinazione è nullo.',
+    )
+    consenso_pubblicazione = models.BooleanField(
+        default=False,
+        help_text='Consenso a pubblicare dato dal chiamante (es. il direttore sportivo via Squadfy). '
+                   'Necessario ma non sufficiente per la pubblicazione automatica: serve anche che la '
+                   'Destinazione abbia pubblicazione_automatica attiva e si sia dentro la sua finestra '
+                   'giorni/orario — altrimenti il Job resta pronto per la pubblicazione manuale.',
     )
     post_id_risultante = models.CharField(max_length=255, blank=True, null=True)
     errore_messaggio = models.TextField(blank=True, null=True)
