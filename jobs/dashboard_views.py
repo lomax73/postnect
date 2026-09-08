@@ -4,6 +4,7 @@ via sessione Django (login richiesto), non X-API-Key come le viste in
 api_views.py."""
 
 import secrets
+from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
@@ -34,7 +35,24 @@ class JobListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['stato_filtro'] = self.request.GET.get('stato', '')
         context['stati'] = Job.STATO_CHOICES
+        for job in context['jobs']:
+            job.immagine_url = settings.MEDIA_URL + job.immagine_path if job.immagine_path else None
         return context
+
+
+class JobDeleteView(LoginRequiredMixin, DeleteView):
+    """Elimina un Job e, se presente, il file immagine associato (altrimenti
+    resterebbe orfano su disco — nessuna pulizia automatica altrove)."""
+    model = Job
+    template_name = 'jobs/job_confirm_delete.html'
+    success_url = reverse_lazy('job-list')
+
+    def form_valid(self, form):
+        job = self.object
+        if job.immagine_path:
+            percorso = Path(settings.MEDIA_ROOT) / job.immagine_path
+            percorso.unlink(missing_ok=True)
+        return super().form_valid(form)
 
 
 class TemplateListView(LoginRequiredMixin, ListView):

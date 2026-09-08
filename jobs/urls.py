@@ -10,6 +10,7 @@ urlpatterns = [
 
     # Dashboard interna (login richiesto)
     path('', dashboard_views.JobListView.as_view(), name='job-list'),
+    path('job/<int:pk>/elimina/', dashboard_views.JobDeleteView.as_view(), name='job-delete'),
 
     path('templates/', dashboard_views.TemplateListView.as_view(), name='template-list'),
     path('templates/nuovo/', dashboard_views.TemplateCreateView.as_view(), name='template-create'),

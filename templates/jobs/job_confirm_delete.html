@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Elimina job — Postnect{% endblock %}
+
+{% block content %}
+<h1>Elimina job</h1>
+<div class="card">
+    <p>
+        Eliminare il job <strong>#{{ object.pk }}</strong> ({{ object.template.nome }},
+        {{ object.get_stato_display }})? Se ha un'immagine generata viene rimossa anche dal
+        disco. L'operazione è definitiva.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Elimina</button>
+        <a class="btn btn-secondary" href="{% url 'job-list' %}">Annulla</a>
+    </form>
+</div>
+{% endblock %}

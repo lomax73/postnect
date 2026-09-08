@@ -15,7 +15,7 @@
 {% if jobs %}
 <table>
     <thead>
-        <tr><th>ID</th><th>Cliente</th><th>Template</th><th>Stato</th><th>Destinazione</th><th>Creato</th></tr>
+        <tr><th>ID</th><th>Cliente</th><th>Template</th><th>Stato</th><th>Destinazione</th><th>Creato</th><th></th></tr>
     </thead>
     <tbody>
         {% for job in jobs %}
@@ -26,9 +26,15 @@
             <td><span class="badge badge-{{ job.stato }}">{{ job.get_stato_display }}</span></td>
             <td>{{ job.destinazione.nome_descrittivo|default:'—' }}</td>
             <td>{{ job.created_at|date:'d/m/Y H:i' }}</td>
+            <td style="white-space:nowrap;">
+                {% if job.immagine_url %}
+                <a href="{{ job.immagine_url }}" target="_blank" rel="noopener" title="Vedi immagine">&#128065;</a>
+                {% endif %}
+                <a href="{% url 'job-delete' job.pk %}" style="color:#ef4444; margin-left:0.75rem;">Elimina</a>
+            </td>
         </tr>
         {% if job.stato == 'errore' and job.errore_messaggio %}
-        <tr><td></td><td colspan="5" style="color:#991b1b; font-size:0.85rem;">{{ job.errore_messaggio }}</td></tr>
+        <tr><td></td><td colspan="6" style="color:#991b1b; font-size:0.85rem;">{{ job.errore_messaggio }}</td></tr>
         {% endif %}
         {% endfor %}
     </tbody>
